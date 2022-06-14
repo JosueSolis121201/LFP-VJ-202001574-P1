@@ -1,3 +1,8 @@
+import sys
+print(sys.getrecursionlimit())
+sys.setrecursionlimit(1500)
+
+
 class clase_token:
     def __init__(self,valor,columna,fila,tipo,tieneErrorLexico=False):
         self.valor = valor
@@ -34,7 +39,7 @@ class lexico():
         
 
         #!Mesanje de SC
-        msg=" intasdads _s double boolean char false 5555555555 32 \"wenas noches\" 7.777  '5'  'a156a' if \"if\" else \'else\' "
+        msg=" intasdads _s double boolean char false 5555555555 32 \"wenas noches\" 7.777  '5'  'a156a' if \"if\" else \'else\' + - * / % == != > >= < <= && || !  => < =< |||"
 
         tieneErrorLexico=False
         self.texto = msg
@@ -65,9 +70,10 @@ class lexico():
                     tieneErrorLexico=True
                     self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"dato_char",tieneErrorLexico))
                     tieneErrorLexico=False
-            elif letra == "+" or letra == "-" or letra == "*" or letra == "+" or letra == "-" or letra == "/" or letra == "%" or letra == "=" or letra == "!" or letra == ">" or letra == "<" or letra == "&" or letra == "|" :                 #!Automata OPERADORES
-                #lectura = self.operadores_s0()
-                print(lectura)
+            elif letra == "+" or letra == "-" or letra == "*"  or letra == "/" or letra == "%"  or letra == "!" or letra == ">" or letra == "<"or letra == "=" or letra == "&" or   letra == "|":                 #!Automata OPERADORES(simples)
+                lectura = self.operadores_s0()
+                self.operador_simple_busqueda(lectura)
+                
                 
             elif letra == " ": #!Salto espacio
                 self.quitar_primera_letra()  
@@ -78,8 +84,55 @@ class lexico():
     def operadores_s0 (self):
         letra = self.leer_letra()
         self.quitar_primera_letra()
-        return letra + self.operadores_s0()                
+        return letra + self.operadores_s1()
 
+    def operadores_s1 (self):
+        letra = self.leer_letra()
+        if letra == "=" or letra == "&" or letra == "|":
+            self.quitar_primera_letra()
+            return letra + self.identificador_S1()
+        else:
+            return ""
+    def operador_simple_busqueda (self,lexema):
+        tieneErrorLexico=False
+        #diccionario
+        diccionario ={"+":0,"-":1,"*":2,"/":3,"%":4,"!":5,">":6,"<":7,"==":8,"!=":9,">=":10,"<=":11,"&&":12,"||":13}
+        tipo_encontrado = diccionario.get(lexema.lower(),None)
+        if(tipo_encontrado == None):
+                tieneErrorLexico=True
+                self.lista_tokens.append(clase_token(lexema,self.columna,self.linea,"Error",tieneErrorLexico))
+                tieneErrorLexico=False
+        else:
+            tipo = tipo_encontrado
+            if tipo ==0:
+                self.lista_tokens.append(clase_token("+",self.columna,self.linea,"suma",tieneErrorLexico))
+            if tipo ==1:
+                self.lista_tokens.append(clase_token("-",self.columna,self.linea,"resta",tieneErrorLexico))
+            if tipo ==2:
+                self.lista_tokens.append(clase_token("*",self.columna,self.linea,"multiplicacion",tieneErrorLexico))
+            if tipo ==3:
+                self.lista_tokens.append(clase_token("/",self.columna,self.linea,"divicion",tieneErrorLexico))
+            if tipo ==4:
+                self.lista_tokens.append(clase_token("%",self.columna,self.linea,"resto",tieneErrorLexico))
+            if tipo ==5:
+                self.lista_tokens.append(clase_token("!",self.columna,self.linea,"not",tieneErrorLexico))
+            if tipo ==6:
+                self.lista_tokens.append(clase_token(">",self.columna,self.linea,"mayor_que",tieneErrorLexico))
+            if tipo ==7:
+                self.lista_tokens.append(clase_token("<",self.columna,self.linea,"menor_que",tieneErrorLexico))
+            if tipo ==8:
+                self.lista_tokens.append(clase_token("==",self.columna,self.linea,"Igualacion",tieneErrorLexico))
+            if tipo ==9:
+                self.lista_tokens.append(clase_token("!=",self.columna,self.linea,"Diferenciacion",tieneErrorLexico))
+            if tipo ==10:
+                self.lista_tokens.append(clase_token(">=",self.columna,self.linea,"mayor_igual",tieneErrorLexico))
+            if tipo ==11:
+                self.lista_tokens.append(clase_token("<=",self.columna,self.linea,"menor_igual",tieneErrorLexico))
+            if tipo ==12:
+                self.lista_tokens.append(clase_token("&&",self.columna,self.linea,"AND",tieneErrorLexico))
+            if tipo ==13:
+                self.lista_tokens.append(clase_token("||",self.columna,self.linea,"OR",tieneErrorLexico))
+            
     #!Automata Identificador    
     def identificador_S0 (self):
         letra = self.leer_letra()
@@ -103,7 +156,6 @@ class lexico():
         diccionario ={"int":0,"double":1,"string":2,"char":3,"boolean":4,"true":5,"false":6,"if":7,"else":8,"while":9,
         "do":10,"void":11,"return":12}
         tipo_encontrado = diccionario.get(lexema.lower(),None)
-        print(tipo_encontrado)
         if(tipo_encontrado == None):
             self.lista_tokens.append(clase_token(lexema,self.columna,self.linea,"identificador",tieneErrorLexico))
         else:
@@ -178,7 +230,6 @@ class lexico():
         else:
             self.quitar_primera_letra()
             return letra 
-    
     #!Herramientas
     def leer_letra(self):
         if(self.texto != ""):
