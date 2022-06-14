@@ -34,7 +34,7 @@ class lexico():
         
 
         #!Mesanje de SC
-        msg=" intasdads _s double boolean char false 5555555555 3.2 "
+        msg=" intasdads _s double boolean char false 5555555555 32 \"wenas noches\" 7777"
 
         tieneErrorLexico=False
         self.texto = msg
@@ -46,18 +46,22 @@ class lexico():
             elif letra == "_" or letra.isalpha(): #!Automata Identificador
                 lectura = self.identificador_S0()
                 self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"identificador",tieneErrorLexico))
-            elif letra.isnumeric(): #!Automata numeros (int)
+            elif letra.isnumeric(): #!Automata numeros (int/double)
                 lectura = self.numero_s0()
-                self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"dato_int",tieneErrorLexico))
-            elif letra.isnumeric(): #!Automata numeros (Double)
-                lectura = self.numero_double_s0()
-                self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"dato_double",tieneErrorLexico))
-            
-
+                if lectura.find('\.'):
+                    self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"dato_double",tieneErrorLexico))
+                else:
+                    self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"dato_int",tieneErrorLexico))
+            elif letra == '\"' or letra == "“" or letra == "”":#!Automata comillas
+                lectura = self.comillas_s0()
+                self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"dato_string",tieneErrorLexico))
+                
             elif letra == " ": #!Salto espacio
                 self.quitar_primera_letra()  
             else:
                 print("error de lexico")
+
+    #!Automata String
             
 
     #!Automata Identificador    
@@ -101,7 +105,7 @@ class lexico():
                 self.lista_tokens.append(clase_token("true",self.columna,self.linea,"dato_boolean",tieneErrorLexico))
             if tipo ==6:
                 self.lista_tokens.append(clase_token("false",self.columna,self.linea,"dato_boolean",tieneErrorLexico))
-    #!Automata numero (int)
+    #!Automata numero (int/double)
     def numero_s0(self):
         letra = self.leer_letra()
         if letra.isnumeric():
@@ -114,72 +118,37 @@ class lexico():
             return letra + self.numero_s1()
         if letra==".":
             self.quitar_primera_letra()
-            return letra + self.numero_double_s1()
+            return letra + self.numero_s1()
         else:
             return ""
-    #!Automata numero (double)
-    def numero_double_s0(self):
+    #!Automata comillas
+    def comillas_s0(self):
         letra = self.leer_letra()
-        if letra.isnumeric():
+        if letra == '\"' or letra == "“" or letra == "”" or letra == "'":
             self.quitar_primera_letra()
-            return letra + self.numero_double_s1()
-    def numero_double_s1(self):
+            return letra +  self.comillas_s1()
+    def comillas_s1(self):
         letra = self.leer_letra()
-        if letra.isnumeric():
+        if letra != '\"'and letra != "“" and letra != "”" and letra != "'":
             self.quitar_primera_letra()
-            return letra + self.numero_double_s1()
-        
+            return letra + self.comillas_s1()
         else:
-            return ""  
-
-
-
+            self.quitar_primera_letra()
+            return letra
+    
+    
     #!Herramientas
     def leer_letra(self):
         if(self.texto != ""):
             return self.texto[0]
         else:
             return ""
-
     def quitar_primera_letra(self):
         if(self.texto != ""):
             self.texto=self.texto[1:]
 
     
-    """
-
-    def letras_s0(self):
-        letra = self.leer_letra()
-        if letra.isalpha():                
-            self.quitar_primera_letra()
-            return letra + self.letras_s1()
-
-    def letras_s1(self):
-        letra = self.leer_letra()
-        if letra.isalpha():
-            self.quitar_primera_letra()
-            return letra + self.letras_s1()
-        else:
-            return """""
-
-    """def comillas_s0(self):
-        letra = self.leer_letra()
-        if letra == '\"' or letra == "“" or letra == "”":
-            self.quitar_primera_letra()
-            
-            return letra +  self.comillas_s1()
-
     
-    def comillas_s1(self):
-        letra = self.leer_letra()
-        if letra != '\"'and letra != "“" and letra != "”":
-            self.quitar_primera_letra()
-            
-
-            return letra + self.comillas_s1()
-        else:
-            self.quitar_primera_letra()
-            return letra"""
 
     
 a=lexico()
