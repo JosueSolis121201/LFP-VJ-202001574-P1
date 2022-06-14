@@ -1,7 +1,3 @@
-import sys
-print(sys.getrecursionlimit())
-sys.setrecursionlimit(1500)
-
 
 class clase_token:
     def __init__(self,valor,columna,fila,tipo,tieneErrorLexico=False):
@@ -39,8 +35,21 @@ class lexico():
         
 
         #!Mesanje de SC
-        msg=" intasdads _s double boolean char false 5555555555 32 \"wenas noches\" 7.777  '5'  'a156a' if \"if\" else \'else\' + - * / % == != > >= < <= && || !  => < =< |||"
-
+        with open("archivo.sc") as f:
+            msg = f.read()
+        
+        
+        """msg= intasdads
+         _s double boolean char false 5555555555 32 \"wenas
+          noches\" 7.777  '5'  'a156a' if \"if\" else \'else\' + - * / % == != > >= < <= && || !  => < =< |||
+          
+          
+          
+          
+          
+          
+        """
+        print(msg)
         tieneErrorLexico=False
         self.texto = msg
         while self.texto != "":
@@ -48,13 +57,17 @@ class lexico():
             if letra.isalpha(): #!Automata Palabra reservada
                 lectura = self.tipo_dato_S0()
                 self.tipo_dato_busqueda(lectura)
+            elif letra == '/':#!Automata comentario(de una linea/varias lineas)
+                lectura = self.comentario_s0()
+                if '*/' in lectura:
+                    self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"comentario_multilinea",tieneErrorLexico))
+                else:
+                    self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"comentario_unilinea",tieneErrorLexico))
             elif letra == "_" or letra.isalpha(): #!Automata Identificador
                 lectura = self.identificador_S0()
                 self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"identificador",tieneErrorLexico))
             elif letra.isnumeric(): #!Automata numeros (int/double)
                 lectura = self.numero_s0()
-                print(lectura)
-                print("///////////////////////////////////////////////////////")
                 if '.' in lectura:
                     self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"dato_double",tieneErrorLexico))
                 else:
@@ -73,19 +86,96 @@ class lexico():
             elif letra == "+" or letra == "-" or letra == "*"  or letra == "/" or letra == "%"  or letra == "!" or letra == ">" or letra == "<"or letra == "=" or letra == "&" or   letra == "|":                 #!Automata OPERADORES(simples)
                 lectura = self.operadores_s0()
                 self.operador_simple_busqueda(lectura)
-                
-                
-            elif letra == " ": #!Salto espacio
-                self.quitar_primera_letra()  
+            elif letra == "[":#![
+                self.quitar_primera_letra()
+                self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"corchete_abre",tieneErrorLexico))
+            elif letra == "]":#!]
+                self.quitar_primera_letra()
+                self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"corchete_cierra",tieneErrorLexico))
+            elif letra == "(":#!(
+                self.quitar_primera_letra()
+                self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"parentesis_abre",tieneErrorLexico))
+            elif letra == ")":#!)
+                self.quitar_primera_letra()
+                self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"parentesis_cierra",tieneErrorLexico))
+            elif letra == "{":#!{
+                self.quitar_primera_letra()
+                self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"llave_abre",tieneErrorLexico))
+            elif letra == "}":#!}
+                self.quitar_primera_letra()
+                self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"llave_cierra",tieneErrorLexico))
+            elif letra == ";":#!}
+                self.quitar_primera_letra()
+                self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"punto_coma",tieneErrorLexico))
+            elif letra == ",":#!}
+                self.quitar_primera_letra()
+                self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"coma",tieneErrorLexico))
+            elif letra == "\n" or letra == "\t" or letra == " ":
+                self.quitar_primera_letra()
             else:
-                print("error de lexico")
+                self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"Error_l/////////////////////////exico",tieneErrorLexico))
+                self.quitar_primera_letra()
 
+      
+    #!Automata comentario(de una linea/varias lineas)
+    def comentario_s0(self):
+        letra = self.leer_letra()
+        if letra == '/':
+            self.quitar_primera_letra()
+            return letra +  self.comentario_s1()
+    def comentario_s1(self):
+        letra = self.leer_letra()
+        if letra == '/':
+            self.quitar_primera_letra()
+            return letra + self.comentario_s2()
+        elif letra == '*':
+            self.quitar_primera_letra()
+            return letra + self.comentario_s4()
+        else:
+            return ""
+    def comentario_s2(self):
+        letra = self.leer_letra()
+        if letra != '\n':
+            self.quitar_primera_letra()
+            return letra + self.comentario_s2()
+        else:
+            return letra + self.comentario_s3()
+    def comentario_s3(self):
+        letra = self.leer_letra()
+        if letra == '\n':
+            self.quitar_primera_letra()
+            return letra 
+        else:
+            return ""
+    def comentario_s4(self):
+        letra = self.leer_letra()
+        if letra != '*':
+            self.quitar_primera_letra()
+            return letra + self.comentario_s4()
+        if letra == '*':
+            self.quitar_primera_letra()
+            return letra + self.comentario_s5()
+        else:
+            return ""
+    def comentario_s5(self):
+        letra = self.leer_letra()
+        if letra != '/':
+            self.quitar_primera_letra()
+            return letra + self.comentario_s4()
+        if letra == '/':
+            return letra + self.comentario_s6()
+        else:
+            return ""
+    def comentario_s6(self):
+        letra = self.leer_letra()
+        if letra == '/':
+            self.quitar_primera_letra()
+            return ""        
     #!Automata OPERADORES
     def operadores_s0 (self):
         letra = self.leer_letra()
         self.quitar_primera_letra()
         return letra + self.operadores_s1()
-
     def operadores_s1 (self):
         letra = self.leer_letra()
         if letra == "=" or letra == "&" or letra == "|":
@@ -132,7 +222,6 @@ class lexico():
                 self.lista_tokens.append(clase_token("&&",self.columna,self.linea,"AND",tieneErrorLexico))
             if tipo ==13:
                 self.lista_tokens.append(clase_token("||",self.columna,self.linea,"OR",tieneErrorLexico))
-            
     #!Automata Identificador    
     def identificador_S0 (self):
         letra = self.leer_letra()
