@@ -34,6 +34,7 @@ class lexico():
         self.lexema_conocido=""
         self.linea = 1
         self.columna = 1
+        self.contador_pruebas_especiales=1
     def genrarReporteToken(self):
         inicio="<html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"estilo.css\"/></head><body>"
         cuerpo = "<table class=\"styled-table\"><tr class=\"active-row\"><th>LEXEMA</th><th>TIPO</th><th>COLUMNA</th><th>LINEA</th><th>ERROR LEXICO</th></th><th>PATRON</th></tr><tbody>"
@@ -55,9 +56,9 @@ class lexico():
 
         cuerpo_token="<h1>REPORTE DE TOKENS</h1>"+ cuerpo +concatenar+ "</tbody></table>"
         cuerpo_errores="<h1>ERRORES LEXICOS</h1>"+ cuerpo_e +concatenar_e+ "</tbody></table>"
-        cuerpo_AFD="<h1>Lexema: 55. Token: dato_int</h1>"+ cuerpo_AFD +concatenar_AFD+ "</tbody></table>"
+        cuerpo_AFD="<h1>SEGUIMIENTO DE AFDs</h1>"+ cuerpo_AFD +concatenar_AFD+ "</tbody></table>"
         final = inicio +cuerpo_token+cuerpo_errores +cuerpo_AFD+"</html></body>"
-        f = open ('report_202001574.html','w')
+        f = open (input("introdusca el nombre del reporte HTML :")+".html",'w')
         f.write(final)
         f.close()
     def analizar(self):
@@ -67,7 +68,7 @@ class lexico():
         
        
         #!Mesanje de SC
-        with open("archivo.sc") as f:
+        with open(input("introdusca el nombre del archivo :")+".sc") as f:
             msg = f.read()
         tieneErrorLexico=False
         self.texto = msg 
@@ -79,7 +80,12 @@ class lexico():
                 self.tipo_dato_busqueda(lectura)
             elif letra == '/':#!Automata comentario(de una linea/varias lineas)
                 lectura = self.comentario_s0()
+               
                 if '*/' in lectura:
+                    if '\n' in lectura:
+                        self.columna=self.columna+0 #! **********
+                    else:
+                        self.columna=self.columna-1 #! **********
                     self.columna=self.columna+1 #! **********
                     self.lexema_conocido=""
                     self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"comentario_multilinea",tieneErrorLexico,"/*(\w|\n| )*[^*/]*/"))
@@ -98,9 +104,9 @@ class lexico():
                     self.columna=1
                     self.linea=self.linea+1
             elif letra == "_" or letra.isalpha(): #!Automata Identificador
-                print(letra)
-                print(lectura)
                 lectura = self.identificador_S0()
+                if ' ' in lectura:
+                    print("esto no deberia estar aqui")
                 self.lexema_conocido=""
                 self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
                 self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"identificador",tieneErrorLexico,"(_|[a-z])([a-z]|[0-9]|_)*"))
@@ -137,40 +143,66 @@ class lexico():
                 self.quitar_primera_letra()
                 self.columna=self.columna+1 #! **********
                 self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"corchete_abre",tieneErrorLexico,"["))
+                self.AFD.append(automata_finito_determinista("S0",letra,"","S1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
             elif letra == "]":#!]
                 self.quitar_primera_letra()
                 self.columna=self.columna+1 #! **********
                 self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"corchete_cierra",tieneErrorLexico,"]"))
+                self.AFD.append(automata_finito_determinista("S0",letra,"","S1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
             elif letra == "(":#!(
                 self.quitar_primera_letra()
                 self.columna=self.columna+1 #! **********
                 self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"parentesis_abre",tieneErrorLexico,"("))
+                self.AFD.append(automata_finito_determinista("S0",letra,"","S1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
             elif letra == ")":#!)
                 self.quitar_primera_letra()
                 self.columna=self.columna+1 #! **********
                 self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"parentesis_cierra",tieneErrorLexico,")"))
+                self.AFD.append(automata_finito_determinista("S0",letra,"","S1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
             elif letra == "{":#!{
                 self.quitar_primera_letra()
                 self.columna=self.columna+1 #! **********
                 self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"llave_abre",tieneErrorLexico,"{"))
+                self.AFD.append(automata_finito_determinista("S0",letra,"","S1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
             elif letra == "}":#!}
                 self.quitar_primera_letra()
                 self.columna=self.columna+1 #! **********
                 self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"llave_cierra",tieneErrorLexico,"}"))
+                self.AFD.append(automata_finito_determinista("S0",letra,"","S1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+            elif letra == ".":#!.
+                self.quitar_primera_letra()
+                self.columna=self.columna+1 #! **********
+                self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"punto",tieneErrorLexico,"."))
+                self.AFD.append(automata_finito_determinista("S0",letra,"","S1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
             elif letra == ";":#!}
                 self.quitar_primera_letra()
                 self.columna=self.columna+1 #! **********true
                 self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"punto_coma",tieneErrorLexico,";"))
+                self.AFD.append(automata_finito_determinista("S0",letra,"","S1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
             elif letra == ",":#!}
                 self.quitar_primera_letra()
                 self.columna=self.columna+1 #! **********
                 self.lista_tokens.append(clase_token(letra,self.columna,self.linea,"coma",tieneErrorLexico,","))
+                self.AFD.append(automata_finito_determinista("S0",letra,"","S1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
             elif letra == "\n" or letra == "\t" or letra == " ":#!Saltos de linea y cosas saltables  
                 if letra== "\n":
-                    self.columna=0 #! **********
+                    self.columna=1 #! **********
                     self.linea=self.linea+1
+                if letra== "\t":
+                    self.columna=self.columna+1#! **********
+                if letra==" ":
+                    self.columna=self.columna+1 #! **********
                 self.quitar_primera_letra()
-                self.columna=self.columna+1 #! **********         
+                         
 
             else:
                 err = self.leer_letra()
@@ -231,10 +263,11 @@ class lexico():
         letra = self.leer_letra()
         self.lexema_conocido=self.lexema_conocido+letra
         if letra != '*':
+            self.AFD.append(automata_finito_determinista("S4",letra,self.lexema_conocido,"S4"))
             self.quitar_primera_letra()
             self.columna=self.columna+1 #! **********
             if letra =="\n":
-                self.AFD.append(automata_finito_determinista("S4",letra,self.lexema_conocido,"S4"))
+                
                 self.columna=0
                 self.linea=self.linea+1
             return letra + self.comentario_s4()
@@ -290,7 +323,7 @@ class lexico():
     def operador_simple_busqueda (self,lexema):
         tieneErrorLexico=False
         #diccionario
-        diccionario ={"+":14,"-":15,"*":16,"/":3,"%":4,"!":5,">":6,"<":7,"==":8,"!=":9,">=":10,"<=":11,"&&":12,"||":13
+        diccionario ={"=":20,"+":14,"-":15,"*":16,"/":3,"%":4,"!":5,">":6,"<":7,"==":8,"!=":9,">=":10,"<=":11,"&&":12,"||":13
 ,"=!":0,"=>":1,"=<":2}
         tipo_encontrado = diccionario.get(lexema.lower(),None)
         if(tipo_encontrado == None):
@@ -299,6 +332,11 @@ class lexico():
                 tieneErrorLexico=False
         else:
             tipo = tipo_encontrado
+            if tipo ==20:
+                self.AFD.append(automata_finito_determinista("s0","=","","s1"))
+                self.AFD.append(automata_finito_determinista("s1","","=","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token("=",self.columna,self.linea,"igual",tieneErrorLexico,"="))
             if tipo ==14:
                 self.AFD.append(automata_finito_determinista("s0","+","","s1"))
                 self.AFD.append(automata_finito_determinista("s1","","+","s1"))
@@ -406,16 +444,21 @@ class lexico():
     def tipo_dato_S0 (self):
         letra = self.leer_letra()
         self.lexema_conocido=self.lexema_conocido+letra
-        self.AFD.append(automata_finito_determinista("S0",letra,self.lexema_conocido,"S1"))
-        self.quitar_primera_letra()
-        self.columna=self.columna+1 #! *********
+        if letra.isalpha() or letra.isnumeric() or letra =="_":
+            self.AFD.append(automata_finito_determinista("S0",letra,self.lexema_conocido,"S1"))
+            self.quitar_primera_letra()
+            self.columna=self.columna+1 #! *********
         return letra + self.tipo_dato_S1()
     def tipo_dato_S1 (self):
         letra = self.leer_letra()
         self.lexema_conocido=self.lexema_conocido+letra
-        self.AFD.append(automata_finito_determinista("S1",letra,self.lexema_conocido,"S1"))
-        self.quitar_primera_letra()
-        return letra + self.tipo_dato_S2()
+        if letra.isalpha() or letra.isnumeric() or letra =="_":
+            self.columna=self.columna+1 #! *********
+            self.AFD.append(automata_finito_determinista("S1",letra,self.lexema_conocido,"S1"))
+            self.quitar_primera_letra()
+            return letra + self.tipo_dato_S2()
+        else:
+            return ""
     def tipo_dato_S2 (self):
         letra = self.leer_letra()
         self.lexema_conocido=self.lexema_conocido+letra
@@ -549,9 +592,6 @@ class lexico():
     def quitar_primera_letra(self):
         if(self.texto != ""):
             self.texto=self.texto[1:]
-a=lexico()
-a.analizar()
-a.genrarReporteToken()
 
 
 
