@@ -10,18 +10,28 @@ class clase_token:
         self.columna = columna
         self.tieneErrorLexico = tieneErrorLexico
         self.patron=patron
-        print(self,valor,columna,fila,tipo,tieneErrorLexico,patron)
+        #print(self,valor,columna,fila,tipo,tieneErrorLexico,patron)
 
 
 
     def html(self):
         return "<tr class=\"active-row\">" + "<td>"+ str(self.valor)+"</td>" + "<td>"+ str(self.tipo)+"</td>" + "<td>"+ str(self.columna)+"</td>"+"<td>"+ str(self.fila)+"</td>" +"<td>"+ str(self.tieneErrorLexico)+"</td>"+"<td>"+ str(self.patron)+"</td>" +"</tr>"
-    
+class automata_finito_determinista:
+    def __init__(self,estado,caracter,lexema_reconocido,siguiente_estado):
+        self.estado = estado
+        self.caracter = caracter
+        self.lexema_reconocido = lexema_reconocido
+        self.siguiente_estado = siguiente_estado
+        #print(self,estado,lexema_reconocido,siguiente_estado)
+    def html(self):
+        return "<tr class=\"active-row\">" + "<td>"+ str(self.estado)+"</td>" + "<td>"+ str(self.caracter)+"</td>" + "<td>"+ str(self.lexema_reconocido)+"</td>"+"<td>"+ str(self.siguiente_estado)+"</td>" +"</tr>"
 class lexico():
     def __init__(self) -> None:
         self.texto=""
         self.lista_tokens=[]
         self.lista_errores = []
+        self.AFD = []
+        self.lexema_conocido=""
         
         self.linea = 1
         self.columna = 1
@@ -29,17 +39,25 @@ class lexico():
         inicio="<html><head><link rel=\"stylesheet\" type=\"text/css\" href=\"estilo.css\"/></head><body>"
         cuerpo = "<table class=\"styled-table\"><tr class=\"active-row\"><th>LEXEMA</th><th>TIPO</th><th>COLUMNA</th><th>LINEA</th><th>ERROR LEXICO</th></th><th>PATRON</th></tr><tbody>"
         cuerpo_e = "<table class=\"styled-table\"><tr class=\"active-row\"><th>LEXEMA</th><th>TIPO</th><th>COLUMNA</th><th>LINEA</th><th>ERROR LEXICO</th></th><th>PATRON</th></tr><tbody>"
+        cuerpo_AFD = "<table class=\"styled-table\"><tr class=\"active-row\"><th>ESTADO</th><th>CARACTER</th><th>LEXEMA CONOCIDO</th><th>SIGUIENTE ESTADO</th></tr><tbody>"
         concatenar = ""
         concatenar_e = ""
+        concatenar_AFD= ""
         #!TOKENS
         for element in self.lista_tokens:
             concatenar = concatenar + element.html()
         #!ERRORES LEXISCOS
         for error in self.lista_errores:
             concatenar_e = concatenar_e + error.html()
+        #!ERRORES AFD
+        for siguimiento in self.AFD:
+            concatenar_AFD = concatenar_AFD + siguimiento.html()
+
+
         cuerpo_token="<h1>REPORTE DE TOKENS</h1>"+ cuerpo +concatenar+ "</tbody></table>"
         cuerpo_errores="<h1>ERRORES LEXICOS</h1>"+ cuerpo_e +concatenar_e+ "</tbody></table>"
-        final = inicio +cuerpo_token+cuerpo_errores +"</html></body>"
+        cuerpo_AFD="<h1>Lexema: 55. Token: dato_int</h1>"+ cuerpo_AFD +concatenar_AFD+ "</tbody></table>"
+        final = inicio +cuerpo_token+cuerpo_errores +cuerpo_AFD+"</html></body>"
         f = open ('report_202001574.html','w')
         f.write(final)
         f.close()
@@ -48,13 +66,10 @@ class lexico():
     def analizador(self):
         #Directorios
         
-
+       
         #!Mesanje de SC
         with open("archivo.sc") as f:
             msg = f.read()
-        
-    
-        print(msg)
         tieneErrorLexico=False
         self.texto = msg 
         while self.texto != "":
@@ -77,9 +92,11 @@ class lexico():
                     self.columna=1
                     self.linea=self.linea+1
             elif letra == "_" or letra.isalpha(): #!Automata Identificador
+                print(letra)
+                print(lectura)
                 lectura = self.identificador_S0()
-                
-
+                self.lexema_conocido=""
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
                 self.lista_tokens.append(clase_token(lectura,self.columna,self.linea,"identificador",tieneErrorLexico,"(_|[a-z])([a-z]|[0-9]|_)*"))
             elif letra.isnumeric(): #!Automata numeros (int/double)
                 lectura = self.numero_s0()
@@ -222,9 +239,7 @@ class lexico():
         if letra == ' ' or letra.isalpha() or letra.isnumeric():
             return "divicion"
         return "divicion"
-
-        
-    #!Automata OPERADORES
+    #!Automata OPERADORES *****************************************************************************************************************************************
     def operadores_s0 (self):
         letra = self.leer_letra()
         self.quitar_primera_letra()
@@ -235,7 +250,7 @@ class lexico():
         if letra == "=" or letra == "&" or letra == "|":
             self.quitar_primera_letra()
             self.columna=self.columna+1 #! **********
-            return letra + self.identificador_S1()
+            return letra + self.operadores_s1()
         else:
             return ""
     def operador_simple_busqueda (self,lexema):
@@ -250,54 +265,93 @@ class lexico():
                 tieneErrorLexico=False
         else:
             tipo = tipo_encontrado
-            if tipo ==14:
-                self.lista_tokens.append(clase_token("+",self.columna,self.linea,"suma",tieneErrorLexico,"+"))
-            if tipo ==15:
-                self.lista_tokens.append(clase_token("-",self.columna,self.linea,"resta",tieneErrorLexico,"-"))
-            if tipo ==16:
-                self.lista_tokens.append(clase_token("*",self.columna,self.linea,"multiplicacion",tieneErrorLexico,"*"))
-            if tipo ==3:
-                self.lista_tokens.append(clase_token("/",self.columna,self.linea,"divicion",tieneErrorLexico,"/"))
-            if tipo ==4:
-                
-                self.lista_tokens.append(clase_token("%",self.columna,self.linea,"resto",tieneErrorLexico,"%"))
-            if tipo ==5:
-                self.lista_tokens.append(clase_token("!",self.columna,self.linea,"not",tieneErrorLexico,"!"))
-            if tipo ==6:
-                self.lista_tokens.append(clase_token(">",self.columna,self.linea,"mayor_que",tieneErrorLexico,">"))
-            if tipo ==7:
-                self.lista_tokens.append(clase_token("<",self.columna,self.linea,"menor_que",tieneErrorLexico,"<"))
-            if tipo ==8:
-                self.lista_tokens.append(clase_token("==",self.columna,self.linea,"Igualacion",tieneErrorLexico,"=="))
-            if tipo ==9:
-                self.lista_tokens.append(clase_token("!=",self.columna,self.linea,"Diferenciacion",tieneErrorLexico,"!="))
-            if tipo ==10:
-                self.lista_tokens.append(clase_token(">=",self.columna,self.linea,"mayor_igual",tieneErrorLexico,">="))
-            if tipo ==11:
-                self.lista_tokens.append(clase_token("<=",self.columna,self.linea,"menor_igual",tieneErrorLexico,"<="))
-            if tipo ==12:
-                self.lista_tokens.append(clase_token("&&",self.columna,self.linea,"AND",tieneErrorLexico,"&&"))
-            if tipo ==13:
-                self.lista_tokens.append(clase_token("||",self.columna,self.linea,"OR",tieneErrorLexico,"||"))
             if tipo ==0:
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
                 self.lista_tokens.append(clase_token("=!",self.columna,self.linea,"ERROR",tieneErrorLexico,"ERROR"))
             if tipo ==1:
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
                 self.lista_tokens.append(clase_token("=>",self.columna,self.linea,"ERROR",tieneErrorLexico,"ERROR"))
             if tipo ==2:
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
                 self.lista_tokens.append(clase_token("=<",self.columna,self.linea,"ERROR",tieneErrorLexico,"ERROR"))
-    #!Automata Identificador    
+            if tipo ==14:
+                self.AFD.append(automata_finito_determinista("s0","+","","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token("+",self.columna,self.linea,"suma",tieneErrorLexico,"+"))
+            if tipo ==15:
+                self.AFD.append(automata_finito_determinista("s0","-","","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token("-",self.columna,self.linea,"resta",tieneErrorLexico,"-"))
+            if tipo ==16:
+                self.AFD.append(automata_finito_determinista("s0","*","","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token("*",self.columna,self.linea,"multiplicacion",tieneErrorLexico,"*"))
+            if tipo ==3:
+                self.AFD.append(automata_finito_determinista("s0","/","","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token("/",self.columna,self.linea,"divicion",tieneErrorLexico,"/"))
+            if tipo ==4:
+                self.AFD.append(automata_finito_determinista("s0","%","","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token("%",self.columna,self.linea,"resto",tieneErrorLexico,"%"))
+            if tipo ==5:
+                self.AFD.append(automata_finito_determinista("s0","!","","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token("!",self.columna,self.linea,"not",tieneErrorLexico,"!"))
+            if tipo ==6:
+                self.AFD.append(automata_finito_determinista("s0",">","","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token(">",self.columna,self.linea,"mayor_que",tieneErrorLexico,">"))
+            if tipo ==7:
+                self.AFD.append(automata_finito_determinista("s0","<","","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token("<",self.columna,self.linea,"menor_que",tieneErrorLexico,"<"))
+            if tipo ==8:
+                self.AFD.append(automata_finito_determinista("s0","=","","s1"))
+                self.AFD.append(automata_finito_determinista("s1","=","=","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token("==",self.columna,self.linea,"Igualacion",tieneErrorLexico,"=="))
+            if tipo ==9:
+                self.AFD.append(automata_finito_determinista("s0","!","","s1"))
+                self.AFD.append(automata_finito_determinista("s1","=","!","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token("!=",self.columna,self.linea,"Diferenciacion",tieneErrorLexico,"!="))
+            if tipo ==10:
+                self.AFD.append(automata_finito_determinista("s0",">","","s1"))
+                self.AFD.append(automata_finito_determinista("s1","=",">","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token(">=",self.columna,self.linea,"mayor_igual",tieneErrorLexico,">="))
+            if tipo ==11:
+                self.AFD.append(automata_finito_determinista("s0","<","","s1"))
+                self.AFD.append(automata_finito_determinista("s1","=","<","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token("<=",self.columna,self.linea,"menor_igual",tieneErrorLexico,"<="))
+            if tipo ==12:
+                self.AFD.append(automata_finito_determinista("s0","&","","s1"))
+                self.AFD.append(automata_finito_determinista("s1","&","&","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token("&&",self.columna,self.linea,"AND",tieneErrorLexico,"&&"))
+            if tipo ==13:
+                self.AFD.append(automata_finito_determinista("s0","|","","s1"))
+                self.AFD.append(automata_finito_determinista("s1","|","|","s1"))
+                self.AFD.append(automata_finito_determinista("------------","--------------","------------------","-----------------"))
+                self.lista_tokens.append(clase_token("||",self.columna,self.linea,"OR",tieneErrorLexico,"||"))
+            
+    #!Automata Identificador    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     def identificador_S0 (self):
         letra = self.leer_letra()
         self.quitar_primera_letra()
         self.columna=self.columna+1 #! *********
-
+        self.lexema_conocido=letra
+        self.AFD.append(automata_finito_determinista("S0",letra,"","S1"))
         return letra + self.identificador_S1()
     def identificador_S1 (self):
         letra = self.leer_letra()
+        self.lexema_conocido=self.lexema_conocido+letra
         if letra.isalpha() or letra.isnumeric() or letra =="_":
+            self.AFD.append(automata_finito_determinista("S1",letra,self.lexema_conocido,"S1"))
             self.quitar_primera_letra()
             self.columna=self.columna+1 #! *********
-
             return letra + self.identificador_S1()
         else:
             return ""
