@@ -69,6 +69,7 @@ class lexico():
        
         #!Mesanje de SC
         with open(input("introdusca el nombre del archivo :")+".sc") as f:
+            print("archivo.sc aceptado ")
             msg = f.read()
         tieneErrorLexico=False
         self.texto = msg 
